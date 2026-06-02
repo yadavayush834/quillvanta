@@ -7,7 +7,6 @@ import type { ChatSummary, Document, Message } from "./types";
 
 const createId = () => crypto.randomUUID();
 type Theme = "light" | "dark";
-type SidebarView = "documents" | "chats";
 type WorkspaceView = "chat" | "graph";
 
 function formatBytes(bytes: number) {
@@ -22,7 +21,6 @@ export function App() {
   const [selectedId, setSelectedId] = useState("");
   const [selectedChatId, setSelectedChatId] = useState("");
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
-  const [sidebarView, setSidebarView] = useState<SidebarView>("documents");
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("chat");
   const [question, setQuestion] = useState("");
   const [error, setError] = useState("");
@@ -77,7 +75,6 @@ export function App() {
   function selectChat(chat: ChatSummary) {
     setSelectedId(chat.document_id);
     setSelectedChatId(chat.id);
-    setSidebarView("chats");
     setWorkspaceView("chat");
   }
 
@@ -89,7 +86,6 @@ export function App() {
       setChats((items) => [chat, ...items]);
       setMessages((items) => ({ ...items, [chat.id]: [] }));
       setSelectedChatId(chat.id);
-      setSidebarView("chats");
       setWorkspaceView("chat");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not create a new chat.");
@@ -195,32 +191,34 @@ export function App() {
         <input ref={fileInput} className="visually-hidden" type="file" accept="application/pdf" onChange={(event) => handleUpload(event.target.files?.[0])} />
         <button className="upload-button" onClick={() => fileInput.current?.click()} disabled={uploading}><UploadIcon />{uploading ? "Indexing PDF..." : "Upload PDF"}</button>
 
-        <div className="sidebar-switch" role="tablist" aria-label="Sidebar content">
-          <button className={sidebarView === "documents" ? "active" : ""} role="tab" aria-selected={sidebarView === "documents"} onClick={() => setSidebarView("documents")}><FileIcon size={16} /> Documents</button>
-          <button className={sidebarView === "chats" ? "active" : ""} role="tab" aria-selected={sidebarView === "chats"} onClick={() => setSidebarView("chats")}><ChatIcon size={16} /> Chats</button>
-        </div>
+        <div className="sidebar-section-heading"><FileIcon size={16} /><strong>Documents</strong></div>
 
-        {sidebarView === "documents" ? (
-          <div className="sidebar-collection">
+        <div className="sidebar-collection">
             {loading && <p className="muted-list">Loading documents...</p>}
             {!loading && documents.length === 0 && <p className="muted-list">Upload your first PDF to begin.</p>}
-            {documents.map((document) => (
-              <button className={`document-row ${document.id === selectedId ? "selected" : ""}`} key={document.id} onClick={() => selectDocument(document)}>
-                <FileIcon /><span><strong>{document.filename}</strong><small>{document.page_count} pages</small></span>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="sidebar-collection">
-            <button className="new-chat-button" onClick={handleNewChat} disabled={!selected}><PlusIcon /> New chat</button>
-            {chats.length === 0 && <p className="muted-list">Start a conversation to save it here.</p>}
-            {chats.map((chat) => (
-              <button className={`chat-row ${chat.id === selectedChatId ? "selected" : ""}`} key={chat.id} onClick={() => selectChat(chat)}>
-                <ChatIcon /><span><strong>{chat.title}</strong><small>{documents.find((document) => document.id === chat.document_id)?.filename ?? "Deleted document"} · {chat.message_count} messages</small></span>
-              </button>
-            ))}
-          </div>
-        )}
+            {documents.map((document) => {
+              const documentChats = chats.filter((chat) => chat.document_id === document.id);
+              const isSelected = document.id === selectedId;
+              return (
+                <div className="document-group" key={document.id}>
+                  <button className={`document-row ${isSelected ? "selected" : ""}`} onClick={() => selectDocument(document)}>
+                    <FileIcon /><span><strong>{document.filename}</strong><small>{document.page_count} pages</small></span>
+                  </button>
+                  {isSelected && (
+                    <div className="document-chats">
+                      <button className="new-chat-button" onClick={handleNewChat}><PlusIcon size={15} /> New chat</button>
+                      {documentChats.map((chat) => (
+                        <button className={`chat-row ${chat.id === selectedChatId ? "selected" : ""}`} key={chat.id} onClick={() => selectChat(chat)}>
+                          <ChatIcon size={15} /><span><strong>{chat.title}</strong><small>{chat.message_count} messages</small></span>
+                        </button>
+                      ))}
+                      {documentChats.length === 0 && <p className="muted-list nested-empty">No saved chats yet.</p>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+        </div>
 
         <button className={`graph-nav-button ${workspaceView === "graph" ? "active" : ""}`} onClick={() => setWorkspaceView("graph")}><GraphIcon /> Knowledge graph</button>
         <div className="storage-note"><span>Local storage</span><strong>{formatBytes(storageUsed)} used</strong><small>{documents.length} {documents.length === 1 ? "PDF" : "PDFs"} stored on this device</small></div>
