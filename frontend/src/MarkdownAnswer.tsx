@@ -1,17 +1,51 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 
 type Block =
   | { type: "code"; language: string; content: string }
   | { type: "heading"; level: number; content: string }
+  | { type: "separator" }
   | { type: "list"; ordered: boolean; items: string[] }
   | { type: "paragraph"; content: string };
 
-function inlineCode(text: string): ReactNode[] {
-  return text.split(/(`[^`]+`)/g).filter(Boolean).map((part, index) => {
+const CODE_KEYWORDS = new Set([
+  "abstract", "async", "await", "boolean", "break", "byte", "case", "catch",
+  "char", "class", "const", "continue", "def", "default", "do", "double",
+  "else", "enum", "export", "extends", "false", "final", "finally", "float",
+  "for", "from", "function", "if", "implements", "import", "in", "instanceof",
+  "int", "interface", "let", "long", "new", "null", "package", "private",
+  "protected", "public", "return", "short", "static", "super", "switch",
+  "this", "throw", "throws", "true", "try", "typeof", "var", "void", "while",
+]);
+
+const CODE_TYPES = new Set([
+  "Array", "ArrayList", "Boolean", "Double", "Error", "Exception", "Float",
+  "Integer", "List", "Map", "Object", "RuntimeException", "String", "System",
+  "Throwable",
+]);
+
+function inlineMarkup(text: string): ReactNode[] {
+  return text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).filter(Boolean).map((part, index) => {
     if (part.startsWith("`") && part.endsWith("`")) {
       return <code key={index}>{part.slice(1, -1)}</code>;
     }
-    return part;
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    return <Fragment key={index}>{part}</Fragment>;
+  });
+}
+
+function highlightCode(content: string): ReactNode[] {
+  const tokens = content.split(/(\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b\d+(?:\.\d+)?\b|\b[A-Za-z_$][\w$]*\b)/g);
+  return tokens.filter(Boolean).map((token, index) => {
+    let className = "";
+    if (/^(\/\/|\/\*)/.test(token)) className = "token-comment";
+    else if (/^["']/.test(token)) className = "token-string";
+    else if (/^\d/.test(token)) className = "token-number";
+    else if (CODE_KEYWORDS.has(token)) className = "token-keyword";
+    else if (CODE_TYPES.has(token) || /^[A-Z][A-Za-z0-9_$]*$/.test(token)) className = "token-type";
+    else if (/^[A-Za-z_$][\w$]*$/.test(token)) className = "token-identifier";
+    return className ? <span className={className} key={index}>{token}</span> : <Fragment key={index}>{token}</Fragment>;
   });
 }
 
@@ -40,9 +74,22 @@ function parseMarkdown(markdown: string): Block[] {
       continue;
     }
 
+    if (/^\s*[-=_]{3,}\s*$/.test(line)) {
+      blocks.push({ type: "separator" });
+      index += 1;
+      continue;
+    }
+
     const heading = line.match(/^(#{1,3})\s+(.+)$/);
     if (heading) {
       blocks.push({ type: "heading", level: heading[1].length, content: heading[2] });
+      index += 1;
+      continue;
+    }
+
+    const boldHeading = line.match(/^\*\*([^*]+)\*\*$/);
+    if (boldHeading) {
+      blocks.push({ type: "heading", level: 2, content: boldHeading[1] });
       index += 1;
       continue;
     }
@@ -65,7 +112,7 @@ function parseMarkdown(markdown: string): Block[] {
     index += 1;
     while (index < lines.length && lines[index].trim()) {
       const next = lines[index].trimEnd();
-      if (next.startsWith("```") || /^(#{1,3})\s+/.test(next) || /^([-*]|\d+\.)\s+/.test(next)) break;
+      if (next.startsWith("```") || /^\s*[-=_]{3,}\s*$/.test(next) || /^(#{1,3})\s+/.test(next) || /^\*\*([^*]+)\*\*$/.test(next) || /^([-*]|\d+\.)\s+/.test(next)) break;
       paragraph.push(next.trim());
       index += 1;
     }
@@ -80,17 +127,20 @@ export function MarkdownAnswer({ content }: { content: string }) {
     <div className="markdown-answer">
       {parseMarkdown(content).map((block, index) => {
         if (block.type === "code") {
-          return <pre key={index}><code data-language={block.language}>{block.content}</code></pre>;
+          return <pre key={index}><code data-language={block.language}>{highlightCode(block.content)}</code></pre>;
         }
         if (block.type === "heading") {
           const Tag = block.level === 1 ? "h3" : block.level === 2 ? "h4" : "h5";
-          return <Tag key={index}>{inlineCode(block.content)}</Tag>;
+          return <Tag key={index}>{inlineMarkup(block.content)}</Tag>;
+        }
+        if (block.type === "separator") {
+          return <hr key={index} />;
         }
         if (block.type === "list") {
           const Tag = block.ordered ? "ol" : "ul";
-          return <Tag key={index}>{block.items.map((item, itemIndex) => <li key={itemIndex}>{inlineCode(item)}</li>)}</Tag>;
+          return <Tag key={index}>{block.items.map((item, itemIndex) => <li key={itemIndex}>{inlineMarkup(item)}</li>)}</Tag>;
         }
-        return <p key={index}>{inlineCode(block.content)}</p>;
+        return <p key={index}>{inlineMarkup(block.content)}</p>;
       })}
     </div>
   );

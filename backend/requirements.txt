@@ -4,5 +4,5 @@ httpx>=0.28.0,<1
 python-dotenv>=1.0.0,<2
 python-multipart>=0.0.20,<1
 pymupdf4llm>=0.0.17,<1
+reportlab>=4.2.0,<5
 uvicorn[standard]>=0.34.0,<1
-

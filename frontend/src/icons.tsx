@@ -41,3 +41,26 @@ export function MenuIcon({ size = 20, className }: IconProps) {
   return <svg {...iconProps(size, className)}><circle cx="12" cy="5" r="1" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="12" cy="19" r="1" fill="currentColor" stroke="none" /></svg>;
 }
 
+export function MoonIcon({ size = 18, className }: IconProps) {
+  return <svg {...iconProps(size, className)}><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3 6.7 6.7 0 0 0 21 12.8Z" /></svg>;
+}
+
+export function SunIcon({ size = 18, className }: IconProps) {
+  return <svg {...iconProps(size, className)}><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>;
+}
+
+export function ChatIcon({ size = 18, className }: IconProps) {
+  return <svg {...iconProps(size, className)}><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z" /></svg>;
+}
+
+export function GraphIcon({ size = 18, className }: IconProps) {
+  return <svg {...iconProps(size, className)}><circle cx="5" cy="12" r="2" /><circle cx="19" cy="5" r="2" /><circle cx="19" cy="19" r="2" /><path d="m7 11 10-5" /><path d="m7 13 10 5" /></svg>;
+}
+
+export function PlusIcon({ size = 18, className }: IconProps) {
+  return <svg {...iconProps(size, className)}><path d="M12 5v14" /><path d="M5 12h14" /></svg>;
+}
+
+export function DownloadIcon({ size = 18, className }: IconProps) {
+  return <svg {...iconProps(size, className)}><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></svg>;
+}

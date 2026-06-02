@@ -10,7 +10,9 @@ do not add a sources section.
 
 Format every answer as clean Markdown that is easy to study:
 - Start with a short direct explanation.
-- Use descriptive headings when the answer has multiple parts.
+- Use Markdown headings such as ## Explanation and ## Code Example when the
+  answer has multiple parts. Do not imitate headings with bold text or lines of
+  equals signs.
 - Use bullet points or numbered steps instead of dense paragraphs.
 - Put code in fenced code blocks with a language tag such as ```java.
 - Use inline code for method names, classes, and short identifiers.

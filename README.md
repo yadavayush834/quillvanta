@@ -30,8 +30,20 @@ This approach gives Quillvanta a few practical advantages:
   MiniLM embeddings locally; GroqCloud handles the expensive answer generation.
 - **Readable answers:** the model is instructed to return structured Markdown
   with headings, lists, inline code, and fenced code blocks.
+- **Developer-friendly code blocks:** fenced examples receive local syntax
+  highlighting for keywords, types, strings, comments, and numbers.
+- **Dark mode:** the interface includes a light/dark theme toggle and remembers
+  the selected theme on the device.
 - **Visible local storage:** the sidebar reports how much disk space the
   uploaded PDFs consume.
+- **Persistent chat history:** successful question-and-answer exchanges are
+  stored locally and restored when you reopen a PDF.
+- **Separate conversations:** create and revisit multiple saved chat sessions
+  for the same document.
+- **Knowledge graph:** open the graph page to inspect which saved chats are
+  connected to each uploaded PDF.
+- **PDF chat exports:** download an active conversation as a polished PDF with
+  headings, citations, spacing, and syntax-colored code examples.
 
 ## Estimated token savings
 
@@ -39,7 +51,7 @@ Token savings depend on the document and the question, so there is no single
 guaranteed percentage.
 
 The current implementation retrieves at most **five chunks**, with up to
-**800 words per chunk**. Therefore, one answer sends at most about **4,000
+**800 words per chunk**. Therefore, one answer sends at most about **
 retrieved words** of PDF context to GroqCloud. Using the common rough estimate
 of `1 token ~= 0.75 words`, that is approximately **5,300 PDF-context tokens**
 before adding the system prompt and the user's question.
@@ -113,5 +125,7 @@ Open http://localhost:5173.
 
 - Text-based PDFs only. Scanned PDFs may produce little or no extracted text.
 - Uploaded documents and vectors are stored locally under `backend/data/`.
+- Chat history is stored locally under `backend/data/chat_history/` and is
+  removed when its PDF is deleted.
 - Groq free-tier rate limits apply.
 - Token savings vary by PDF length and retrieval quality.
