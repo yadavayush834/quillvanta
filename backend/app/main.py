@@ -124,16 +124,17 @@ async def chat(request: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=404, detail="Document not found.")
 
     try:
-        answer = await answer_question(request.question, passages)
+        answer, usage = await answer_question(request.question, passages)
     except httpx.HTTPStatusError as error:
         raise HTTPException(status_code=502, detail="Groq could not answer the request.") from error
     except RuntimeError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
     pages = sorted({passage["page"] for passage in passages})
-    summary = append_exchange(request.document_id, request.chat_id, request.question, answer, [Citation(page=page) for page in pages])
+    summary = append_exchange(request.document_id, request.chat_id, request.question, answer, [Citation(page=page) for page in pages], usage)
     return ChatResponse(
         chat_id=summary.id,
         answer=answer,
         citations=[Citation(page=page) for page in pages],
+        usage=usage,
     )

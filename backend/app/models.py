@@ -21,10 +21,19 @@ class Citation(BaseModel):
     page: int
 
 
+class TokenUsage(BaseModel):
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    cached_tokens: int = 0
+    context_characters: int = 0
+
+
 class ChatResponse(BaseModel):
     chat_id: str
     answer: str
     citations: list[Citation]
+    usage: TokenUsage
 
 
 class ChatMessage(BaseModel):
@@ -32,6 +41,7 @@ class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: str
     citations: list[Citation] = Field(default_factory=list)
+    usage: TokenUsage | None = None
     created_at: datetime
 
 

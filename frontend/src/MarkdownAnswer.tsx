@@ -1,4 +1,5 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, type ReactNode, useRef, useState } from "react";
+import { ChatIcon, CopyIcon } from "./icons";
 
 type Block =
   | { type: "code"; language: string; content: string }
@@ -122,12 +123,49 @@ function parseMarkdown(markdown: string): Block[] {
   return blocks;
 }
 
-export function MarkdownAnswer({ content }: { content: string }) {
+async function copyText(text: string) {
+  await navigator.clipboard.writeText(text);
+}
+
+export function MarkdownAnswer({ content, onAskFollowUp }: { content: string; onAskFollowUp: (text: string) => void }) {
+  const answerRef = useRef<HTMLDivElement>(null);
+  const [selectedText, setSelectedText] = useState("");
+  const [copied, setCopied] = useState("");
+
+  async function handleCopy(text: string, key: string) {
+    await copyText(text);
+    setCopied(key);
+    window.setTimeout(() => setCopied(""), 1400);
+  }
+
+  function handleSelection() {
+    const selection = window.getSelection();
+    const text = selection?.toString().trim() ?? "";
+    if (!selection || !text || !answerRef.current?.contains(selection.anchorNode)) {
+      setSelectedText("");
+      return;
+    }
+    setSelectedText(text);
+  }
+
   return (
-    <div className="markdown-answer">
+    <div className="markdown-answer" ref={answerRef} onMouseUp={handleSelection}>
+      <button className="answer-copy-button" type="button" onClick={() => handleCopy(content, "answer")}><CopyIcon />{copied === "answer" ? "Copied" : "Copy text"}</button>
+      {selectedText && (
+        <div className="selection-actions">
+          <button type="button" onClick={() => handleCopy(selectedText, "selection")}><CopyIcon />{copied === "selection" ? "Copied" : "Copy"}</button>
+          <button type="button" onClick={() => onAskFollowUp(selectedText)}><ChatIcon size={15} />Ask inside chat</button>
+        </div>
+      )}
       {parseMarkdown(content).map((block, index) => {
         if (block.type === "code") {
-          return <pre key={index}><code data-language={block.language}>{highlightCode(block.content)}</code></pre>;
+          const language = block.language || "code";
+          return (
+            <div className="code-block" key={index}>
+              <div className="code-toolbar"><span>{language}</span><button type="button" onClick={() => handleCopy(block.content, `code-${index}`)}><CopyIcon />{copied === `code-${index}` ? "Copied" : "Copy"}</button></div>
+              <pre><code data-language={language}>{highlightCode(block.content)}</code></pre>
+            </div>
+          );
         }
         if (block.type === "heading") {
           const Tag = block.level === 1 ? "h3" : block.level === 2 ? "h4" : "h5";

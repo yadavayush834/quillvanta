@@ -1,6 +1,7 @@
 import httpx
 
 from .config import GROQ_API_KEY, GROQ_MODEL
+from .models import TokenUsage
 
 
 SYSTEM_PROMPT = """You answer questions only from the supplied PDF passages.
@@ -21,7 +22,7 @@ Format every answer as clean Markdown that is easy to study:
 - Answer in the language or style requested by the user."""
 
 
-async def answer_question(question: str, passages: list[dict]) -> str:
+async def answer_question(question: str, passages: list[dict]) -> tuple[str, TokenUsage]:
     if not GROQ_API_KEY or GROQ_API_KEY == "replace-with-your-groq-api-key":
         raise RuntimeError("Add GROQ_API_KEY to backend/.env before asking questions.")
 
@@ -49,4 +50,14 @@ async def answer_question(question: str, passages: list[dict]) -> str:
         )
         response.raise_for_status()
         payload = response.json()
-        return payload["choices"][0]["message"]["content"].strip()
+        usage = payload.get("usage", {})
+        return (
+            payload["choices"][0]["message"]["content"].strip(),
+            TokenUsage(
+                prompt_tokens=int(usage.get("prompt_tokens", 0)),
+                completion_tokens=int(usage.get("completion_tokens", 0)),
+                total_tokens=int(usage.get("total_tokens", 0)),
+                cached_tokens=int(usage.get("prompt_tokens_details", {}).get("cached_tokens", 0)),
+                context_characters=len(context),
+            ),
+        )

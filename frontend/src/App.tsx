@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { askQuestion, createChat, deleteDocument, downloadChatPdf, fetchChats, fetchDocuments, fetchMessages, uploadDocument } from "./api";
 import { GraphView } from "./GraphView";
-import { BookIcon, ChatIcon, DownloadIcon, FileIcon, GraphIcon, MoonIcon, PlusIcon, SendIcon, SparkleIcon, SunIcon, TrashIcon, UploadIcon } from "./icons";
+import { BookIcon, ChatIcon, DownloadIcon, FileIcon, GraphIcon, InfoIcon, MoonIcon, PlusIcon, SendIcon, SparkleIcon, SunIcon, TrashIcon, UploadIcon } from "./icons";
 import { MarkdownAnswer } from "./MarkdownAnswer";
 import type { ChatSummary, Document, Message } from "./types";
 
@@ -34,6 +34,7 @@ export function App() {
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
   const fileInput = useRef<HTMLInputElement>(null);
+  const questionInput = useRef<HTMLInputElement>(null);
 
   const selected = documents.find((document) => document.id === selectedId);
   const activeMessages = selectedChatId ? messages[selectedChatId] ?? [] : [];
@@ -169,7 +170,7 @@ export function App() {
         ...items,
         [response.chat_id]: [
           ...(items[response.chat_id] ?? []),
-          { id: createId(), role: "assistant", content: response.answer, citations: response.citations },
+          { id: createId(), role: "assistant", content: response.answer, citations: response.citations, usage: response.usage },
         ],
       }));
       setChats(await fetchChats());
@@ -178,6 +179,11 @@ export function App() {
     } finally {
       setAnswering(false);
     }
+  }
+
+  function askFollowUp(text: string) {
+    setQuestion(`Explain this in more detail: "${text}"`);
+    window.setTimeout(() => questionInput.current?.focus(), 0);
   }
 
   return (
@@ -220,8 +226,10 @@ export function App() {
             })}
         </div>
 
-        <button className={`graph-nav-button ${workspaceView === "graph" ? "active" : ""}`} onClick={() => setWorkspaceView("graph")}><GraphIcon /> Knowledge graph</button>
-        <div className="storage-note"><span>Local storage</span><strong>{formatBytes(storageUsed)} used</strong><small>{documents.length} {documents.length === 1 ? "PDF" : "PDFs"} stored on this device</small></div>
+        <div className="storage-note">
+          <div><span>Local storage</span><strong>{formatBytes(storageUsed)} used</strong><small>{documents.length} {documents.length === 1 ? "PDF" : "PDFs"} stored on this device</small></div>
+          <button className={`graph-nav-button ${workspaceView === "graph" ? "active" : ""}`} title="Knowledge graph" aria-label="Knowledge graph" onClick={() => setWorkspaceView("graph")}><GraphIcon /></button>
+        </div>
       </aside>
 
       <main className="workspace">
@@ -246,8 +254,8 @@ export function App() {
                       <article className={`message ${message.role}`} key={message.id}>
                         <div className="avatar">{message.role === "user" ? "You" : <SparkleIcon size={18} />}</div>
                         <div className="message-body">
-                          {message.role === "assistant" ? <MarkdownAnswer content={message.content} /> : <p>{message.content}</p>}
-                          {message.citations && message.citations.length > 0 && <div className="citations"><BookIcon />Sources: pages {message.citations.map((citation) => citation.page).join(", ")}</div>}
+                          {message.role === "assistant" ? <MarkdownAnswer content={message.content} onAskFollowUp={askFollowUp} /> : <p>{message.content}</p>}
+                          {message.citations && message.citations.length > 0 && <div className="answer-meta"><div className="citations"><BookIcon />Sources: pages {message.citations.map((citation) => citation.page).join(", ")}</div>{message.usage && <div className="usage-info"><button type="button" aria-label="Token usage details"><InfoIcon /></button><div className="usage-tooltip"><strong>Token usage</strong><span>Input <b>{message.usage.prompt_tokens}</b></span><span>Output <b>{message.usage.completion_tokens}</b></span><span>Total <b>{message.usage.total_tokens}</b></span><span>Cached <b>{message.usage.cached_tokens}</b></span><span>Context <b>{message.usage.context_characters} chars</b></span></div></div>}</div>}
                         </div>
                       </article>
                     ))}
@@ -258,7 +266,7 @@ export function App() {
             </div>
             <div className="composer-wrap">
               {error && <p className="error-message">{error}</p>}
-              <div className="composer"><input value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => event.key === "Enter" && handleAsk()} placeholder={selected ? "Ask another question" : "Upload a PDF before asking a question"} disabled={!selected || answering || loadingHistory} /><button aria-label="Send question" onClick={handleAsk} disabled={!selected || question.trim().length < 2 || answering || loadingHistory}><SendIcon /></button></div>
+              <div className="composer"><input ref={questionInput} value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => event.key === "Enter" && handleAsk()} placeholder={selected ? "Ask another question" : "Upload a PDF before asking a question"} disabled={!selected || answering || loadingHistory} /><button aria-label="Send question" onClick={handleAsk} disabled={!selected || question.trim().length < 2 || answering || loadingHistory}><SendIcon /></button></div>
               <p className="disclaimer">Answers are generated from retrieved passages. Verify important details in the source PDF.</p>
             </div>
           </section>

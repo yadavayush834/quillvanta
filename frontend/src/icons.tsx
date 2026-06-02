@@ -64,3 +64,11 @@ export function PlusIcon({ size = 18, className }: IconProps) {
 export function DownloadIcon({ size = 18, className }: IconProps) {
   return <svg {...iconProps(size, className)}><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></svg>;
 }
+
+export function CopyIcon({ size = 16, className }: IconProps) {
+  return <svg {...iconProps(size, className)}><rect width="13" height="13" x="8" y="8" rx="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>;
+}
+
+export function InfoIcon({ size = 16, className }: IconProps) {
+  return <svg {...iconProps(size, className)}><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 8h.01" /></svg>;
+}

@@ -5,7 +5,7 @@ from threading import RLock
 from uuid import uuid4
 
 from .config import CHAT_HISTORY_DIR
-from .models import ChatMessage, ChatSession, ChatSummary, Citation
+from .models import ChatMessage, ChatSession, ChatSummary, Citation, TokenUsage
 
 
 history_lock = RLock()
@@ -130,6 +130,7 @@ def append_exchange(
     question: str,
     answer: str,
     citations: list[Citation],
+    usage: TokenUsage,
 ) -> ChatSummary:
     with history_lock:
         sessions = _read_sessions(document_id)
@@ -155,6 +156,7 @@ def append_exchange(
                     role="assistant",
                     content=answer,
                     citations=citations,
+                    usage=usage,
                     created_at=now,
                 ),
             ]

@@ -1,4 +1,4 @@
-import type { ChatSummary, Document, Message } from "./types";
+import type { ChatSummary, Document, Message, TokenUsage } from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -71,5 +71,5 @@ export async function askQuestion(documentId: string, chatId: string, question: 
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ document_id: documentId, chat_id: chatId, question }),
   });
-  return parseResponse<{ chat_id: string; answer: string; citations: { page: number }[] }>(response);
+  return parseResponse<{ chat_id: string; answer: string; citations: { page: number }[]; usage: TokenUsage }>(response);
 }
